@@ -154,7 +154,8 @@ jobs:
 
       # -----------------------------------------------------------------------
       # Trivy vulnerability scan
-      # Primary gate: make scan exits non-zero on CRITICAL/HIGH CVEs.
+      # Primary gate: make scan prints every CRITICAL/HIGH finding, then checks
+      # KEV, EPSS, fix age, and register review age. Missing evidence fails.
       # Secondary: trivy-action uploads SARIF to GitHub Security tab.
       # -----------------------------------------------------------------------
       - name: Install Trivy

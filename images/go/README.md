@@ -73,7 +73,9 @@ hardened-go:latest — Trivy scan (CRITICAL, HIGH)
 Total: 0
 ```
 
-Distroless images carry near-zero CVEs because there are almost no OS packages to be vulnerable. Any findings that arise with no available fix are documented in [`.trivyignore`](.trivyignore) with justification.
+Distroless images carry near-zero CVEs because there are almost no OS packages
+to be vulnerable. Any future finding stays visible and must be recorded with
+current evidence in [`docs/known-findings.md`](../../docs/known-findings.md).
 
 ---
 

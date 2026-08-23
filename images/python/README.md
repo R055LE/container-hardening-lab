@@ -119,17 +119,19 @@ the `:debug` distroless tag, which adds busybox. Do not ship it.
 ## CVE scan result
 > **No findings are suppressed.** There is no `.trivyignore` in this repo.
 > Everything the scanner reports is listed in [`docs/known-findings.md`](../../docs/known-findings.md)
-> with evidence and a resolution condition, and `make scan` fails while any of
-> them is open.
+> with evidence and a resolution condition. `make scan` evaluates every finding
+> against KEV, EPSS, fix age, and review age.
 
 
 ```
 hardened-python:latest — Trivy scan (CRITICAL, HIGH)
 
-Total: 0
+Total: 15 HIGH findings (5 unique CVEs)
 ```
 
-The `python:3.12-slim` base is actively maintained and receives timely CVE patches. Any findings that arise from the base image with no available fix are documented in [`.trivyignore`](.trivyignore) with justification.
+The findings remain visible and are documented in
+[`docs/known-findings.md`](../../docs/known-findings.md). None currently has a
+Debian fix; missing or stale evidence blocks the gate.
 
 ---
 
@@ -138,8 +140,8 @@ The `python:3.12-slim` base is actively maintained and receives timely CVE patch
 ```dockerfile
 FROM hardened-python:latest
 
-# Your application already owns /app as appuser
-COPY --chown=appuser:appgroup src/ ./src/
+# Your application already owns /app as nonroot
+COPY --chown=nonroot:nonroot src/ ./src/
 
 # If you need additional pip packages, install them as root in a
 # preceding build stage and copy the result — do not run pip at runtime

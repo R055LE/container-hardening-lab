@@ -46,11 +46,11 @@ commandTests:
 
   # Native addons compile against a specific module ABI, so the runtime major
   # must match the builder's.
-  - name: "runtime is Node 20"
+  - name: "runtime is Node 24"
     command: "/nodejs/bin/node"
     args: ["--version"]
     expectedOutput:
-      - "^v20\\."
+      - "^v24\\."
 
   # Proves node_modules survived the copy and resolves from /app.
   - name: "express is importable"

@@ -41,13 +41,13 @@ RUN mkdir -p /install/lib/python3.13/site-packages \
 #     `appuser` needed groupadd/useradd, which no longer exist here.
 #   - Debugging is `docker cp` and reading logs, not `docker exec sh`.
 # =============================================================================
-FROM gcr.io/distroless/python3-debian13:nonroot@sha256:1c680cdb442a9e7a89f64fd1706367c62302ea1f9ab80fdebdb72ae9fcded46f AS final
+FROM gcr.io/distroless/python3-debian13:nonroot@sha256:6bfc400d0a6d89f50f5bbc0a4b4ff57214ae5c01647c3a74c2a0c8d830b4cc00 AS final
 
 # --- Known findings ------------------------------------------------------
 # This image reports 5 CVEs that have no Debian fix released: three in the
 # Python stdlib (tarfile extraction filters, html.parser, expat), one in
-# ncurses, one in libblkid via libuuid1. None are suppressed. `make scan` fails
-# while they are open, on purpose.
+# ncurses, and one in OpenSSL's unused QUIC server path. None are suppressed. `make scan`
+# evaluates each against the evidence policy in docs/known-findings.md.
 #
 # Each is recorded in docs/known-findings.md with the evidence for why it isn't
 # urgent *for this reference application* and what would resolve it. Read that

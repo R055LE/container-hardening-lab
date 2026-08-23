@@ -6,12 +6,12 @@
 # the final image. Only the resulting node_modules and application source
 # are promoted to stage 2.
 #
-# Node 20 in both stages. Native addons compile against a specific module
+# Node 24 in both stages. Native addons compile against a specific module
 # ABI, so a builder on a different major produces a node_modules the runtime
-# cannot load. node:20-slim is paired with distroless nodejs20-debian13
+# cannot load. node:24-slim is paired with distroless nodejs24-debian13
 # deliberately.
 # =============================================================================
-FROM node:20-slim@sha256:2cf067cfed83d5ea958367df9f966191a942351a2df77d6f0193e162b5febfc0 AS builder
+FROM node:24-slim@sha256:3638d9a6fe4030bd716be989438248074489337ba3275657f93595428be4fc03 AS builder
 
 WORKDIR /build
 
@@ -50,23 +50,17 @@ COPY . .
 #     `appuser` (10001) the previous image created with useradd.
 #   - `node` is not on PATH. The binary lives at /nodejs/bin/node.
 # =============================================================================
-FROM gcr.io/distroless/nodejs20-debian13:nonroot@sha256:c8da1b6cccb5c6cc4b8826c67353f31c5f7b2719c5517b1312d191b337d8bd99 AS final
+FROM gcr.io/distroless/nodejs24-debian13:nonroot@sha256:ffab599740d4aaa66029d02b9e6d3de4f622fefb7410081c5ef69c86430f364d AS final
 
 # --- Known findings ------------------------------------------------------
-# One CVE open: CVE-2026-45447 in libssl3t64. Unlike the python image's
-# findings, this one HAS a fix released (3.5.6-1~deb13u2) and it is not
-# reachable-by-argument away either, since it is OpenSSL in a network service.
-# It is unapplied only because distroless ships no package manager, so the image
-# cannot patch ahead of an upstream rebuild.
-#
-# Not suppressed. See docs/known-findings.md. If this is still open weeks from
-# now, the base image is not being rebuilt promptly, which is a reason to
-# reconsider the base rather than to keep waiting.
+# CVE-2026-14456 remains in libssl3t64 with no Debian fix. It affects OpenSSL's
+# QUIC server listener, which this HTTP reference app does not use. It is not
+# suppressed; see docs/known-findings.md for the gate evidence.
 
 LABEL org.opencontainers.image.title="hardened-node" \
-      org.opencontainers.image.description="CIS-hardened Node.js 20 runtime on distroless" \
+      org.opencontainers.image.description="CIS-hardened Node.js 24 runtime on distroless" \
       org.opencontainers.image.vendor="container-hardening-lab" \
-      org.opencontainers.image.base.name="gcr.io/distroless/nodejs20-debian13:nonroot"
+      org.opencontainers.image.base.name="gcr.io/distroless/nodejs24-debian13:nonroot"
 
 WORKDIR /app
 

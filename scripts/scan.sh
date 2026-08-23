@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # scripts/scan.sh
 # Build each container image, run Trivy vulnerability scan, and generate an
-# SBOM with Syft. Exits non-zero if any CRITICAL or HIGH CVEs are found.
+# SBOM with Syft. Exits non-zero when the vulnerability evidence gate blocks.
 #
 # Usage:
 #   ./scripts/scan.sh                   # scan all images
@@ -24,10 +24,7 @@ POLICIES_DIR="${REPO_ROOT}/policies/opa"
 # Image tag prefix (e.g. hardened-python:latest)
 IMAGE_PREFIX="hardened"
 
-# Trivy exit code when vulnerabilities are found
-TRIVY_EXIT_CODE=1
-
-# Severity levels that cause a build failure
+# Severity levels evaluated by the evidence gate
 TRIVY_SEVERITY="CRITICAL,HIGH"
 
 # SBOM formats to generate
@@ -79,6 +76,7 @@ log "Images to process: ${TARGETS[*]}"
 require_tool docker
 require_tool trivy
 require_tool syft
+require_tool python3
 
 CONFTEST_AVAILABLE=false
 if command -v conftest &>/dev/null; then
@@ -147,31 +145,29 @@ process_image() {
     # -----------------------------------------------------------------------
     log "[${name}] Running Trivy scan (severity: ${TRIVY_SEVERITY})..."
 
-    local trivyignore_flag=""
-    if [[ -f "${image_dir}/.trivyignore" ]]; then
-        trivyignore_flag="--ignorefile ${image_dir}/.trivyignore"
-    fi
-
-    # JSON report (always written, exit code captured separately)
+    # JSON report is evaluated after the full table is printed. Nothing is
+    # suppressed, so every finding remains visible in both artifacts.
     trivy image \
         --format json \
         --output "${report_dir}/trivy.json" \
         --severity "${TRIVY_SEVERITY}" \
         --exit-code 0 \
-        ${trivyignore_flag} \
         "${tag}" 2>&1 | tee "${report_dir}/trivy.log"
 
-    # Human-readable table report + exit-code enforcement
-    if ! trivy image \
+    trivy image \
             --format table \
             --severity "${TRIVY_SEVERITY}" \
-            --exit-code "${TRIVY_EXIT_CODE}" \
-            ${trivyignore_flag} \
-            "${tag}" 2>&1 | tee -a "${report_dir}/trivy.log"; then
-        fail "[${name}] Trivy found ${TRIVY_SEVERITY} vulnerabilities — see ${report_dir}/trivy.json"
+            --exit-code 0 \
+            "${tag}" 2>&1 | tee -a "${report_dir}/trivy.log"
+
+    if ! python3 "${REPO_ROOT}/scripts/vulnerability_gate.py" \
+            --trivy-report "${report_dir}/trivy.json" \
+            --register "${REPO_ROOT}/docs/known-findings.md" \
+            2>&1 | tee -a "${report_dir}/trivy.log"; then
+        fail "[${name}] Vulnerability evidence gate blocked — see ${report_dir}/trivy.json"
         return 1
     fi
-    ok "[${name}] Trivy: no ${TRIVY_SEVERITY} CVEs found"
+    ok "[${name}] Vulnerability evidence gate passed"
 
     # -----------------------------------------------------------------------
     # Step 4: Syft SBOM generation

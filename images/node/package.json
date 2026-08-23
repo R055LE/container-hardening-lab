@@ -1,7 +1,7 @@
 {
   "name": "hardened-node-app",
   "version": "1.0.0",
-  "description": "Reference application for the hardened Node.js 20 image",
+  "description": "Reference application for the hardened Node.js 24 image",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js"
@@ -10,6 +10,6 @@
     "express": "^4.21.2"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=24"
   }
 }
