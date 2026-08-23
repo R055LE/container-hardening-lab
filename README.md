@@ -221,7 +221,7 @@ flowchart TD
         direction TB
         i1["Lint Dockerfile\nConftest / OPA"]:::step --> i2
         i2["Build image"]:::step --> i3
-        i3["Trivy scan\ngate: CRITICAL / HIGH = fail"]:::gate --> i4
+        i3["Trivy scan\nKEV / EPSS / fix age / review age gate"]:::gate --> i4
         i3 --> i5
         i4["SARIF → GitHub\nSecurity tab"]:::output
         i5["Generate SBOM\nSyft — CycloneDX + SPDX"]:::step --> i6
@@ -244,7 +244,10 @@ flowchart TD
 
 **`failure-demo`** asserts that the unhardened Dockerfile and `node:18` base image are correctly flagged. A clean result here fails the job, proving the tooling is live.
 
-**`image-pipeline`** runs in parallel across all three images. Trivy findings are uploaded to the GitHub Security tab as SARIF for triage. All reports are archived as build artifacts for 30 days.
+**`image-pipeline`** runs in parallel across all four images. Each scan keeps the
+full CRITICAL and HIGH inventory visible and applies the evidence gate. Trivy
+findings are uploaded to the GitHub Security tab as SARIF for triage. All
+reports are archived as build artifacts for 30 days.
 
 ## Image Signing
 

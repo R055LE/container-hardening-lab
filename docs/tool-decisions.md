@@ -120,8 +120,8 @@ The tradeoff: one more tool to install. For a single assertion, a `docker run` o
 > them or removing the packages. Suppression was refused deliberately. Moving to
 > distroless removed the packages.
 >
-> Measured before and after, with the same Trivy version and each image's own
-> `.trivyignore`, counting only findings that reach the gate:
+> Measured before and after with the same Trivy version, no suppression, and
+> the full CRITICAL and HIGH inventory evaluated by the gate:
 >
 > | image | before | after |
 > |---|---|---|
