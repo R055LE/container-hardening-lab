@@ -53,7 +53,9 @@ make all
 - **All images use non-root users** with UID >= 10001 and expose only unprivileged ports (>= 1024).
 - **OPA policies use Rego v1 keywords** (`contains`, `if`, `in` via `import future.keywords.*`).
 - **Every policy has unit tests.** OPA policies in `tests/opa/`, Kyverno policies in `tests/kyverno/`. No policy change without a corresponding test update.
-- **Trivy CVE suppression** goes in per-image `.trivyignore` files with a justification comment — never suppress without documented reasoning.
+- **Trivy CVEs are never suppressed.** Record each current finding in
+  `docs/known-findings.md`; the evidence gate fails closed when metadata or
+  external risk data is missing.
 - **Base images are pinned to digests** for reproducibility and supply-chain integrity.
 - **Annotations/comments are for portfolio readability.** Policy files and Dockerfiles include explanatory annotations aimed at reviewers who may not be familiar with the tools.
 
@@ -81,6 +83,6 @@ Images are pushed to `ghcr.io` and signed with Cosign (keyless/Sigstore) on push
 See `docs/adding-an-image.md` for the full walkthrough. Short version:
 1. Create `images/<name>/Dockerfile` following existing hardening patterns
 2. `make lint IMAGE=<name>` must pass
-3. `make scan IMAGE=<name>` must exit 0
+3. `make scan IMAGE=<name>` must pass the vulnerability evidence gate
 4. Add `tests/structure/<name>.yaml`
 5. Add `<name>` to the matrix in `.github/workflows/container-security.yml`

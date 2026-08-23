@@ -122,23 +122,27 @@ If the build fails, the error is from Docker — fix the Dockerfile and retry.
 make scan IMAGE=go
 ```
 
-This exits non-zero if any CRITICAL or HIGH CVEs are found. Common responses:
+This prints every CRITICAL or HIGH CVE, then evaluates it against the evidence
+gate. Common responses:
 
 | Finding type | Action |
 |---|---|
 | OS package with a fix available | Upgrade the base image or run `apt-get upgrade` in the Dockerfile |
-| OS package `will_not_fix` | Add to `images/go/.trivyignore` with a justification comment and exploitability assessment |
+| OS package `will_not_fix` | Add an evidence-backed entry to `docs/known-findings.md`; missing metadata fails closed |
 | Application dependency with a fix | Update the dependency in `go.sum` |
-| False positive / not exploitable | Add to `.trivyignore` with explanation; document why it is not reachable |
+| False positive / not exploitable | Document the reachability evidence in `docs/known-findings.md`; do not suppress the scanner output |
 
-`.trivyignore` format:
+Register metadata format:
 
 ```
-# CVE-YYYY-NNNNN — reason this is accepted
-# Exploitability: <assessment>
-# Review by: YYYY-MM-DD
-CVE-YYYY-NNNNN
+gate: cve=CVE-YYYY-NNNNN reviewed=YYYY-MM-DD fix-available=none
 ```
+
+Wrap the completed line in an HTML comment. Placeholder lines must not use the
+gate comment marker because every marked line is parsed as policy input.
+
+The gate blocks CISA KEV findings, EPSS above 0.1, fixes available for at least
+30 days, and entries not reviewed in 90 days. Missing feeds or metadata block.
 
 ---
 
@@ -237,12 +241,12 @@ Create `images/go/README.md` following the pattern in [images/python/README.md](
 
 ```
 [ ] images/go/Dockerfile          — hardened, passes make lint
-[ ] images/go/.trivyignore        — accepted CVEs documented (may be empty)
+[ ] docs/known-findings.md        — every reported CVE has current evidence
 [ ] images/go/.dockerignore       — excludes local build artifacts
 [ ] tests/structure/go.yaml       — runtime assertions, make test-structure passes
 [ ] images/go/README.md           — documents decisions and usage
 [ ] .github/workflows/container-security.yml      — go added to matrix
 [ ] make build IMAGE=go           — builds successfully
-[ ] make scan  IMAGE=go           — 0 CRITICAL/HIGH CVEs
+[ ] make scan  IMAGE=go           — evidence gate passes
 [ ] make sbom  IMAGE=go           — SBOM generated
 ```

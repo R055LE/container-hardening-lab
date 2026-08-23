@@ -22,7 +22,7 @@ This lab addresses the most common container security failures in production:
 .
 ├── images/
 │   ├── python/               # distroless python3-debian13 — reference hardened image
-│   ├── node/                 # distroless nodejs20-debian13 — Express API
+│   ├── node/                 # distroless nodejs24-debian13 — Express API
 │   ├── nginx/                # nginx:1.27-alpine — static file server
 │   └── go/                   # distroless — statically compiled Go binary
 │

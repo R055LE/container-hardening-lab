@@ -45,7 +45,7 @@ SBOM_FORMATS   := cyclonedx-json spdx-json
 # ---------------------------------------------------------------------------
 # Phony targets
 # ---------------------------------------------------------------------------
-.PHONY: all build scan sbom lint test test-all test-opa test-kyverno test-falco test-structure clean help $(ALL_IMAGES)
+.PHONY: all build scan sbom lint test test-all test-opa test-kyverno test-vulnerability-gate test-falco test-structure clean help $(ALL_IMAGES)
 
 # ---------------------------------------------------------------------------
 # all: full pipeline for every (or one) image
@@ -69,28 +69,25 @@ build:  ## Build container image(s). Use IMAGE=<name> for a single image.
 # ---------------------------------------------------------------------------
 # scan: Trivy vulnerability scan
 # ---------------------------------------------------------------------------
-scan:  ## Run Trivy CVE scan. Fails on CRITICAL/HIGH. Use IMAGE=<name> for one image.
+scan:  ## Run Trivy CVE scan and evidence gate. Use IMAGE=<name> for one image.
 	@for img in $(TARGETS); do \
 	    echo ""; \
 	    echo "==> Scanning $(IMAGE_PREFIX)-$$img:latest"; \
 	    mkdir -p "$(REPORTS_DIR)/$$img"; \
-	    TRIVYIGNORE=""; \
-	    if [ -f "$(IMAGES_DIR)/$$img/.trivyignore" ]; then \
-	        TRIVYIGNORE="--ignorefile $(IMAGES_DIR)/$$img/.trivyignore"; \
-	    fi; \
 	    trivy image \
 	        --format json \
 	        --output "$(REPORTS_DIR)/$$img/trivy.json" \
 	        --severity "$(TRIVY_SEVERITY)" \
 	        --exit-code 0 \
-	        $$TRIVYIGNORE \
 	        "$(IMAGE_PREFIX)-$$img:latest"; \
 	    trivy image \
 	        --format table \
 	        --severity "$(TRIVY_SEVERITY)" \
-	        --exit-code 1 \
-	        $$TRIVYIGNORE \
+	        --exit-code 0 \
 	        "$(IMAGE_PREFIX)-$$img:latest"; \
+	    python3 scripts/vulnerability_gate.py \
+	        --trivy-report "$(REPORTS_DIR)/$$img/trivy.json" \
+	        --register docs/known-findings.md; \
 	    echo "    Report: $(REPORTS_DIR)/$$img/trivy.json"; \
 	done
 
@@ -127,14 +124,14 @@ lint:  ## Run Conftest OPA policies against Dockerfile(s). Use IMAGE=<name> for 
 # ---------------------------------------------------------------------------
 # test: fast policy tests — no Docker required
 # ---------------------------------------------------------------------------
-test: test-opa test-kyverno  ## Run policy tests only (OPA + Kyverno). No Docker required.
+test: test-opa test-kyverno test-vulnerability-gate  ## Run policy tests only. No Docker required.
 	@echo ""
 	@echo "==> Policy tests passed."
 
 # ---------------------------------------------------------------------------
 # test-all: all test layers including Docker-dependent tests
 # ---------------------------------------------------------------------------
-test-all: test-opa test-kyverno test-falco  ## Run all tests including Falco validation (requires Docker).
+test-all: test test-falco  ## Run all tests including Falco validation (requires Docker).
 	@echo ""
 	@echo "==> All tests passed."
 
@@ -172,6 +169,12 @@ test-kyverno:  ## Run Kyverno policy tests against fixture manifests (requires: 
 	@echo ""
 	@echo "==> Kyverno policy tests"
 	kyverno test $(TESTS_DIR)/kyverno/ --detailed-results
+
+# ---------------------------------------------------------------------------
+# test-vulnerability-gate: evidence gate unit and mutation tests
+# ---------------------------------------------------------------------------
+test-vulnerability-gate:  ## Run vulnerability evidence gate tests (requires: python3).
+	python3 -m unittest discover -s $(TESTS_DIR)/scripts -p 'test_*.py' -v
 
 # ---------------------------------------------------------------------------
 # test-falco: validate Falco custom rules (syntax, macros, field references)

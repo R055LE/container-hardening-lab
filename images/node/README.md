@@ -1,11 +1,11 @@
 # hardened-node
 
-**Base image:** `gcr.io/distroless/nodejs20-debian13:nonroot` (Node 20)
-**Builder:** `node:20-slim` (must match the runtime major version)
+**Base image:** `gcr.io/distroless/nodejs24-debian13:nonroot` (Node 24)
+**Builder:** `node:24-slim` (must match the runtime major version)
 **Runtime user:** `nonroot` (UID 65532)
 **Exposed port:** 3000
 
-A hardened Node.js 20 runtime for Express-based APIs and background services. Follows the same pattern as [hardened-python](../python/README.md) with Node-specific considerations around npm's bundled package surface and supply-chain risk from install scripts.
+A hardened Node.js 24 runtime for Express-based APIs and background services. Follows the same pattern as [hardened-python](../python/README.md) with Node-specific considerations around npm's bundled package surface and supply-chain risk from install scripts.
 
 ---
 
@@ -77,7 +77,7 @@ npm post-install scripts (`postinstall`, `preinstall`) execute arbitrary shell c
 
 ---
 
-### Non-root user: `appuser` UID 10001 (CIS 4.1)
+### Non-root user: `nonroot` UID 65532 (CIS 4.1)
 
 Same pattern as Python. Node.js web servers have no legitimate need for root. Express binds to port 3000 (above 1024), so `CAP_NET_BIND_SERVICE` is not required.
 
@@ -139,17 +139,18 @@ the `:debug` distroless tag, which adds busybox. Do not ship it.
 ## CVE scan result
 > **No findings are suppressed.** There is no `.trivyignore` in this repo.
 > Everything the scanner reports is listed in [`docs/known-findings.md`](../../docs/known-findings.md)
-> with evidence and a resolution condition, and `make scan` fails while any of
-> them is open.
+> with evidence and a resolution condition. `make scan` evaluates every finding
+> against KEV, EPSS, fix age, and review age.
 
 
 ```
 hardened-node:latest — Trivy scan (CRITICAL, HIGH)
 
-Total: 0
+Total: 1 HIGH (CVE-2026-14456, OpenSSL QUIC server path)
 ```
 
-OS-level CVEs with no available fix in Debian 12 are documented in [`.trivyignore`](.trivyignore) with justification and exploitability assessment.
+The finding has no Debian fix, is not suppressed, and is documented with its
+reachability evidence in [`docs/known-findings.md`](../../docs/known-findings.md).
 
 ---
 
@@ -176,7 +177,7 @@ FROM hardened-node:latest
 
 # node_modules are already in /app from the build stage
 # Copy only your application source
-COPY --chown=appuser:appgroup src/ ./src/
+COPY --chown=nonroot:nonroot src/ ./src/
 
 # The entrypoint is already set to `node`
 CMD ["src/server.js"]
@@ -194,7 +195,7 @@ docker run \
   --tmpfs /tmp:rw,noexec,nosuid,size=64m \
   --cap-drop=ALL \
   --security-opt no-new-privileges \
-  --user 10001:10001 \
+  --user 65532:65532 \
   -p 3000:3000 \
   hardened-node:latest
 ```
@@ -205,7 +206,7 @@ docker run \
 
 ```bash
 make build IMAGE=node          # Build the image
-make scan  IMAGE=node          # Trivy CVE scan (fails on CRITICAL/HIGH)
+make scan  IMAGE=node          # Trivy scan plus evidence gate
 make sbom  IMAGE=node          # Generate CycloneDX + SPDX SBOM
 make lint  IMAGE=node          # OPA/Conftest policy check on the Dockerfile
 make test-structure IMAGE=node # 14 runtime assertions against the built image

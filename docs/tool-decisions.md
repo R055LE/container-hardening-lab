@@ -144,18 +144,17 @@ The tradeoff: one more tool to install. For a single assertion, a `docker run` o
 >
 > **What was given up, honestly.** The node image previously ran
 > `apt-get upgrade -y` to pick up Debian fixes released since the base was last
-> rebuilt upstream. Distroless has no package manager, so that lever is gone:
-> the one remaining node finding is `libssl3t64` CVE-2026-45447, which *does*
-> have a fix, and we now wait for Google to rebuild rather than applying it
-> ourselves. The trade is "I can patch ahead of upstream" for "there is far less
-> to patch." At 10 findings to 1 that trade is clearly worth it, but it is a
-> trade, not a free win.
+> rebuilt upstream. Distroless has no package manager, so that lever is gone.
+> That became concrete when the Node 20 image retained CVE-2026-45447 for more
+> than 30 days after Debian released a fix. The image moved to Node 24 on
+> 2026-08-23 rather than weakening the gate. The trade is "I can patch ahead of
+> upstream" for "there is far less to patch." It is a trade, not a free win.
 >
 > Debugging also genuinely gets worse, exactly as the original text warned. See
 > the notes on `docker cp` in each image's README.
 
 **Python and Node:** `gcr.io/distroless/python3-debian13` and
-`gcr.io/distroless/nodejs20-debian13`
+`gcr.io/distroless/nodejs24-debian13`
 **nginx:** `nginx:1.27-alpine` (Alpine)
 **Evaluated:** Full images, Debian slim, Chainguard Images (`cgr.dev/chainguard/*`)
 
