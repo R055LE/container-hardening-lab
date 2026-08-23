@@ -6,7 +6,7 @@ By the end you will have:
 - A hardened Dockerfile following the lab's CIS benchmark pattern
 - OPA/Conftest policy coverage (automatic — policies apply to all images)
 - A container structure test config with runtime assertions
-- CI integration (automatic — the matrix picks up new images via `find`)
+- CI integration through an explicit workflow matrix entry
 - SBOM and Trivy scan outputs
 
 ---
@@ -207,14 +207,8 @@ Outputs `reports/go/sbom.cyclonedx.json` and `reports/go/sbom.spdx.json`. These 
 
 ## 8. CI integration
 
-No workflow changes needed. The `image-pipeline` job matrix is hardcoded to `[python, node, nginx]`:
-
-```yaml
-matrix:
-  image: [python, node, nginx]
-```
-
-Add `go` to the list:
+The `image-pipeline` workflow matrix is explicit so its required check contexts
+stay deliberate. Add the new image to the list. The completed Go entry is:
 
 ```yaml
 matrix:

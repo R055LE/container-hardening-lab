@@ -1,4 +1,4 @@
-# CLAUDE.md
+# AGENTS.md: container-hardening-lab
 
 ## What this project is
 
@@ -37,7 +37,7 @@ make all
 
 ## Project structure
 
-- `images/<name>/Dockerfile` — hardened container images (python, node, nginx)
+- `images/<name>/Dockerfile` — hardened container images (python, node, nginx, go)
 - `policies/opa/*.rego` — Conftest/OPA policies evaluated against Dockerfiles
 - `policies/kyverno/*.yaml` — Kubernetes admission policies
 - `tests/opa/*_test.rego` — OPA unit tests (one file per policy)
@@ -74,9 +74,13 @@ Prefixes: `feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`.
 The workflow (`.github/workflows/container-security.yml`) runs three jobs:
 1. **policy-tests** — OPA + Kyverno (no Docker, fast feedback)
 2. **failure-demo** — asserts the unhardened Dockerfile IS rejected (inverted test)
-3. **image-pipeline** — lint, build, Trivy scan, SBOM, structure tests, push + Cosign sign (matrix: python/node/nginx)
+3. **image-pipeline** — lint, build, Trivy scan, SBOM, structure tests, push + Cosign sign (matrix: python/node/nginx/go)
 
 Images are pushed to `ghcr.io` and signed with Cosign (keyless/Sigstore) on pushes to main only.
+
+These job names and the expanded image contexts are merge-control interfaces.
+Coordinate any rename with the repository ruleset, Runbook decision 0025, and
+the repo-specific fleet audit policy.
 
 ## Adding a new image
 
